@@ -1,0 +1,18 @@
+a_feast_for_crows_10_109.txt
+a_feast_for_crows_110_159.txt
+a_feast_for_crows_160_209.txt
+
+rw-r--r--. 1 ec2-user ec2-user  8724 Oct 26 17:09 a_feast_for_crows_210_259.txt
+-rw-r--r--. 1 ec2-user ec2-user  8725 Oct 26 16:11 a_feast_for_crows_260_309.txt
+
+
+for F in a_feast_for_crows_310_359.txt a_feast_for_crows_360_409.txt a_feast_for_crows_410_459.txt a_feast_for_crows_460_509.txt a_feast_for_crows_510_559.txt a_storm_of_swords_10_109.txt a_storm_of_swords_110_159.txt a_storm_of_swords_160_209.txt a_storm_of_swords_210_259.txt a_storm_of_swords_260_309.txt a_storm_of_swords_310_359.txt a_storm_of_swords_360_409.txt a_storm_of_swords_410_459.txt
+do
+  scp -i $HOME/Documents/Demos/creds/kdavis_pse_daily_east.pem ec2-user@44.211.151.182:/home/ec2-user/neo4j_game_of_thrones/data/$F .
+done
+
+for F in a_feast_for_crows_460_509.txt a_feast_for_crows_510_559.txt a_feast_for_crows_560_586.txt
+do
+  scp -i $HOME/Documents/Demos/creds/kdavis_pse_daily_east.pem ec2-user@44.211.151.182:/home/ec2-user/neo4j_game_of_thrones/data/$F .
+done
+
