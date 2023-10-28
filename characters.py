@@ -6,6 +6,7 @@ characters = [
 ####################
   "Ned",
   "Eddard",
+  "Lyanna",
   "Catelyn",
   "Rob",
   "Jon",
@@ -40,6 +41,7 @@ characters = [
   "Dany",
   "Khaleesi",
   "Viserys",
+  "Rhaegar",
 ####################
   "Mormont",
 ####################
@@ -72,11 +74,23 @@ characters = [
   "Davos",
   "Petyr",
   "Littlefinger",
-  "Sandor",
-  "The Hound",
   "Melisandre",
   "Varys",
   "Brienne",
-  "Gendry"
+  "Gendry",
+  "Jaqen",
+  "Night King",
+####################
+  "Clegane",
+####################
+  "Sandor",
+  "The Hound",
+  "Gregor",
+####################
+# Groups
+####################
+  "Kingsguard",
+  "Brotherhood Without Banners", 
+  "White Walkers"
 ]
 
