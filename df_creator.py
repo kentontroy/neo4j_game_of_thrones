@@ -8,9 +8,6 @@ import pandas as pd
 import pandasql as ps
 import re
 
-#####################################################################################
-# Read triples from file into a dataframe
-#####################################################################################
 def readTriplesFromFile(filePath: str) -> pd.DataFrame:
   data = []
   with open(filePath, "r") as f:
@@ -38,9 +35,6 @@ def readTriplesFromFile(filePath: str) -> pd.DataFrame:
   df = pd.DataFrame(data, columns=["Book", "Page", "Subject", "Predicate", "Object"])   
   return df
 
-#####################################################################################
-# Save triples in a dataframe to a file
-#####################################################################################
 def saveTriplesToFile(df: pd.DataFrame, filePath: str):
   df.to_csv(filePath, sep = "|", index=False)
 
@@ -49,57 +43,20 @@ def readTriplesFromDfFile(filePath: str) -> pd.DataFrame:
   return df
 
 #####################################################################################
-# Get unique predicates
+# Run a SQL statement against the dataframe
 #####################################################################################
-def getUniquePredicates(df: pd.DataFrame) -> pd.DataFrame:
-  query = f"""SELECT DISTINCT(Predicate) AS predicate
-              FROM df 
-           """
-  return ps.sqldf(query, locals())
-
-#####################################################################################
-# Remove undesired subjects and objects 
-#####################################################################################
-def getTriplesWithoutLabel(df: pd.DataFrame, label: str) -> pd.DataFrame:
-  label = label.upper()
-  query = f"""SELECT Book, Page, Subject, Predicate, Object
-              FROM df 
-              WHERE UPPER(Subject) NOT LIKE '%{label}%' AND UPPER(Object) Not LIKE '%{label}%'
-              AND UPPER(Predicate) NOT LIKE '%{label}%'
-           """
-  return ps.sqldf(query, locals())
-
-#####################################################################################
-# Get subjects and objects having a label
-#####################################################################################
-def getTriplesWithLabel(df: pd.DataFrame, label: str) -> pd.DataFrame:
-  label = label.upper()
-  query = f"""SELECT Book, Page, Subject, Predicate, Object 
-              FROM df 
-              WHERE UPPER(Subject) LIKE '%{label}%' OR UPPER(Object) LIKE '%{label}%'
-           """
-  return ps.sqldf(query, locals())
-
+def runSql(df: pd.DataFrame, sql: str) -> pd.DataFrame:
+  return ps.sqldf(sql, locals())
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("-f", "--file", type=str, required=True, help="Specify the filename where dataframe was saved")
-  parser.add_argument("-l", "--label", type=str, required=False, help="Specify the label of interest")
-  parser.add_argument("-p", "--predicate", action="store_true", required=False, help="List the unique predicates")
+  parser.add_argument("-q", "--sql", type=str, required=True, help="Specify the SQL statement")
   args = parser.parse_args()
 
+  pd.options.display.max_rows = 100
   df = readTriplesFromDfFile(filePath = args.file)
 
-  if not args.label and not args.predicate:
-    print("Incorrect usage: python df_creator.py [-h] to get help on command options")
-    exit()
-
-  if args.label and not args.predicate:
-    dfQuery = getTriplesWithLabel(df = df, label = args.label)
-  elif not args.label and args.predicate:
-    dfQuery = getUniquePredicates(df = df)
-  elif args.label and args.predicate:
-    dfQuery = getTriplesWithLabel(df = df, label = args.label)
-    dfQuery = getUniquePredicates(df = dfQuery)
-    
+  dfQuery = runSql(df = df, sql = args.sql)
+  saveTriplesToFile(df = dfQuery, filePath = "output.csv")
   print(dfQuery) 
