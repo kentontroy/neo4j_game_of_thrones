@@ -1,0 +1,16 @@
+services:
+  game_of_thrones_neo4j:
+    image: neo4j
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    environment:
+      - NEO4J_AUTH=neo4j/cloudera 
+  game_of_thrones_jupyter:
+    build:
+      context: .
+      dockerfile: jupyter.Dockerfile
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/home/jovyan/work

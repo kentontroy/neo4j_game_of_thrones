@@ -86,6 +86,7 @@ characters = [
   "Sandor",
   "The Hound",
   "Gregor",
+  "The Mountain",
 ####################
 # Groups
 ####################

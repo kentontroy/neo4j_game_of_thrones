@@ -22,8 +22,17 @@ def readTriplesFromFile(filePath: str) -> pd.DataFrame:
       book = "A Feast For Crows"
     elif re.search("a_dance_with_dragons", filePath):
       book = "A Dance With Dragons"
+
+    i = 0
+
     for l in f.readlines():
+      i += 1
+      if i == 1:
+        continue
       line = l.split(":", 1)
+
+      print(line)
+
       page = line[0].strip()
       triples = ast.literal_eval(line[1].strip())
       for triple in triples:

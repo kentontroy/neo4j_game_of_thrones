@@ -1,94 +1,113 @@
-from characters import characters
-from dotenv import load_dotenv
-from langchain.graphs.networkx_graph import NetworkxEntityGraph
-from negatives import negatives
-import argparse
+from neo4j import GraphDatabase
+
+#URI = "bolt://game_of_thrones_neo4j:7687"
+URI = "bolt://localhost:7687"
+AUTH = ("neo4j", "cloudera")
+
+driver = GraphDatabase.driver(URI, auth=AUTH)
+driver.verify_connectivity()
+
+########################################################
+
 import df_creator as dfCreate
-import os
 import pandas as pd
-import pandasql as ps
 
-if __name__ == "__main__":
-  tripleFiles = [
-# A Game of Thrones -  Book 1.pdf
-    "game_of_thrones_pages_10_109.txt",
-    "game_of_thrones_pages_110_159.txt",
-    "game_of_thrones_pages_160_209.txt",
-    "game_of_thrones_pages_210_259.txt",
-    "game_of_thrones_pages_260_309.txt",
-    "game_of_thrones_pages_310_359.txt",
-    "game_of_thrones_pages_360_409.txt",
-    "game_of_thrones_pages_410_459.txt",
-    "game_of_thrones_pages_460_509.txt",
-    "game_of_thrones_pages_510_552.txt",
-# A Clash of Kings - Book 2.pdf
-    "a_clash_of_kings_10_109.txt",
-    "a_clash_of_kings_110_159.txt",
-    "a_clash_of_kings_160_209.txt",
-    "a_clash_of_kings_210_259.txt",
-    "a_clash_of_kings_260_309.txt",
-    "a_clash_of_kings_310_359.txt",
-    "a_clash_of_kings_360_409.txt",
-    "a_clash_of_kings_411_459.txt",
-    "a_clash_of_kings_460_509.txt",
-    "a_clash_of_kings_510_559.txt",
-    "a_clash_of_kings_560_609.txt",
-    "a_clash_of_kings_610_612.txt",
-# A Storm of Swords - Book 3.pdf
-    "a_storm_of_swords_10_109.txt",
-    "a_storm_of_swords_110_159.txt",
-    "a_storm_of_swords_160_209.txt",
-    "a_storm_of_swords_210_259.txt",
-    "a_storm_of_swords_260_309.txt",
-    "a_storm_of_swords_310_359.txt",
-    "a_storm_of_swords_360_409.txt",
-    "a_storm_of_swords_410_459.txt",
-    "a_storm_of_swords_460_509.txt",
-    "a_storm_of_swords_510_559.txt",
-    "a_storm_of_swords_560_609.txt",
-    "a_storm_of_swords_610_659.txt",
-    "a_storm_of_swords_660_709.txt",
-    "a_storm_of_swords_710_759.txt",
-    "a_storm_of_swords_760_787.txt",
-# A Feast for Crows - Book 4.pdf
-    "a_feast_for_crows_10_109.txt",
-    "a_feast_for_crows_110_159.txt",
-    "a_feast_for_crows_160_209.txt",
-    "a_feast_for_crows_210_259.txt",
-    "a_feast_for_crows_260_309.txt",
-    "a_feast_for_crows_310_359.txt",
-    "a_feast_for_crows_360_409.txt",
-    "a_feast_for_crows_410_459.txt",
-    "a_feast_for_crows_460_509.txt",
-    "a_feast_for_crows_510_559.txt",
-    "a_feast_for_crows_560_586.txt",
-# A Dance With Dragons - Book 5.pdf
-    "a_dance_with_dragons_10_109.txt",
-    "a_dance_with_dragons_110_209.txt",
-    "a_dance_with_dragons_210_309.txt",
-    "a_dance_with_dragons_310_409.txt",
-    "a_dance_with_dragons_410_509.txt",
-    "a_dance_with_dragons_510_609.txt",
-    "a_dance_with_dragons_610_709.txt",
-    "a_dance_with_dragons_710_809.txt",
-    "a_dance_with_dragons_810_909.txt"
-  ]
+filePath = "./data/all_raw_triples.csv"
+pd.options.display.max_rows = 100
+df = dfCreate.readTriplesFromDfFile(filePath = filePath)
+sql = """SELECT Book, Page, Subject, Predicate, Object
+         FROM df
+      """
+dfQuery = dfCreate.runSql(df = df, sql = sql)
+print(dfQuery)
 
-  load_dotenv()
-  dfTriples = pd.DataFrame()
-  for t in tripleFiles:
-    path = os.path.join(os.getenv("TRIPLES_DIR_FILES"), t)
-    df = dfCreate.readTriplesFromFile(filePath = path) 
-    dfTriples = pd.concat([dfTriples, df], ignore_index=True, axis=0)
+########################################################
+from typing import Tuple
 
-# Remove any duplicate triples that were created on the same page
-  dfTriples.drop_duplicates(inplace = True)
+books = [
+  "Game Of Thrones", 
+  "A Clash Of Kings", 
+  "A Storm Of Swords",  
+  "A Feast For Crows",
+  "A Dance With Dragons"
+]
 
-# Remove undesired words due to hallucinations, NSFW, or unwanted characters" 
-  for negative in negatives:
-    dfTriples = dfCreate.getTriplesWithoutLabel(df = dfTriples, label = negative)
+def _create_book_(tx, book):
+  result = tx.run("MERGE (b:Book { name: $book }) RETURN b", book=book)
+  return result
 
-  path = os.path.join(os.getenv("TRIPLES_DIR_FILES"), "all_raw_triples.csv")
-  dfCreate.saveTriplesToFile(df = dfTriples, filePath = path)
-  print(dfTriples)
-  
+def _create_book_to_page_(tx, data: Tuple[str, str, str, str, str]):
+  cypher =  f"MATCH (b:Book) WHERE b.name = '{data[0]}' "
+  cypher +=  "MERGE (p:Page { number: $pageNum, book: b.name }) "
+  cypher +=  "MERGE (b)-[r:HAS_CONTENT_ON]->(p) "
+  cypher +=  "RETURN b,r,p"
+  result = tx.run(cypher, pageNum=data[1])
+  return result
+
+def _create_page_to_triple_(tx, data: Tuple[str, str, str, str, str]):
+  cypher =  "MERGE (p:Page { number: $pageNum, book: $bookName }) " 
+  cypher += "MERGE (t:Triple { text: $fragment }) "
+  cypher += "MERGE (p)-[r:HAS_TRIPLE]->(t) "
+  cypher += "RETURN p,r,t"
+  fragment = data[2] + " " + data[3] + " " + data[4] 
+  result = tx.run(cypher, pageNum=data[1], bookName=data[0], fragment=fragment)
+  return result
+
+def _create_triple_to_subject_(tx, data: Tuple[str, str, str, str, str]):
+  cypher =  "MERGE (t:Triple { text: $fragment }) "
+  cypher += "MERGE (s:Subject { text: $subject }) "
+  cypher += "MERGE (t)-[r:HAS_SUBJECT]->(s) "
+  cypher += "RETURN t,r,s"
+  fragment = data[2] + " " + data[3] + " " + data[4] 
+  result = tx.run(cypher, fragment=fragment, subject=data[2])
+  return result
+
+def _create_triple_to_predicate_(tx, data: Tuple[str, str, str, str, str]):
+  cypher =  "MERGE (t:Triple { text: $fragment }) "
+  cypher += "MERGE (p:Predicate { text: $predicate }) "
+  cypher += "MERGE (t)-[r:HAS_PREDICATE]->(p) "
+  cypher += "RETURN t,r,p"
+  fragment = data[2] + " " + data[3] + " " + data[4] 
+  result = tx.run(cypher, fragment=fragment, predicate=data[3])
+  return result
+
+def _create_triple_to_object_(tx, data: Tuple[str, str, str, str, str]):
+  cypher =  "MERGE (t:Triple { text: $fragment }) "
+  cypher += "MERGE (o:Object { text: $object }) "
+  cypher += "MERGE (t)-[r:HAS_OBJECT]->(o) "
+  cypher += "RETURN t,r,o"
+  fragment = data[2] + " " + data[3] + " " + data[4] 
+  result = tx.run(cypher, fragment=fragment, object=data[4])
+  return result
+
+
+with driver.session() as session:
+  for book in books:
+    result = session.execute_write(_create_book_, book)
+    print(result)
+
+  with open(filePath, "r") as f:        
+    i = 0
+    lines = f.readlines()
+    for line in lines:
+      print(line)
+      i += 1
+      if i == 1:
+        continue
+      bookName =  line.split("|")[0]
+      pageNum =   line.split("|")[1]
+      subject =   line.split("|")[2]
+      predicate = line.split("|")[3] 
+      object =    line.split("|")[4]
+      result = session.execute_write(_create_book_to_page_, (bookName, pageNum, subject, predicate, object))
+      print(result)
+      result = session.execute_write(_create_page_to_triple_, (bookName, pageNum, subject, predicate, object))
+      print(result)
+      result = session.execute_write(_create_triple_to_subject_, (bookName, pageNum, subject, predicate, object))
+      print(result)
+      result = session.execute_write(_create_triple_to_predicate_, (bookName, pageNum, subject, predicate, object))
+      print(result)
+      result = session.execute_write(_create_triple_to_object_, (bookName, pageNum, subject, predicate, object))
+      print(result)
+
+
