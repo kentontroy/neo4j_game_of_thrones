@@ -26,3 +26,4 @@ Change the URL and authn credentials in graph_creator.py
 
 python graph_creator.py
 ```
+## View all of the triples in a Neo4J database
