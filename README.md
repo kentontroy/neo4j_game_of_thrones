@@ -23,6 +23,9 @@ root@8219d191653a:/var/lib/neo4j# cp ${NEO4J_HOME}/labs/apoc-5.13.0-core.jar ${N
 ## Design of the Graph Database
 ![image](./images/example-graph-model.png)
 
+## Scan pages of a book in parallel using Ray
+![image](./images/example-ray-parallelize.png)
+
 ## Populate the graph database with the triples
 ```
 Change the URL and authn credentials in graph_creator.py
