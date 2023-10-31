@@ -33,5 +33,5 @@ python graph_creator.py
 ![image](./images/example-cypher-for-all.png)
 
 ## View Arya's thoughts of revenge and kills
-![image](./images/example-arya-kills)
+![image](./images/example-arya-kills.png)
 
