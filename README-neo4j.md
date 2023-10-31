@@ -11,7 +11,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 ```
 ## Start docker
 ```
-docker-compose up -d
+sudo docker-compose up -d
 ```
 
 ## Ensure the docker container has access to the APOC core libraries 
