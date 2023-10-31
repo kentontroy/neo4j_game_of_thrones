@@ -31,3 +31,7 @@ python graph_creator.py
 ```
 ## View all of the triples in a Neo4J database
 ![image](./images/example-cypher-for-all.png)
+
+## View Arya's thoughts of revenge and kills
+![image](./images/example-arya-kills)
+
