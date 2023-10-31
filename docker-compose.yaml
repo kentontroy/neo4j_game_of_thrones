@@ -2,10 +2,14 @@ services:
   game_of_thrones_neo4j:
     image: neo4j
     ports:
-      - "7687:7687"
-      - "7474:7474"
+    - "7687:7687"
+    - "7474:7474"
     environment:
-      - NEO4J_AUTH=neo4j/cloudera 
+      - NEO4J_AUTH=neo4j/cloudera
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+    volumes:
+      - ./graphData:/data
+      - ./graphPlugins:/var/lib/neo4j/plugins
   game_of_thrones_jupyter:
     build:
       context: .
